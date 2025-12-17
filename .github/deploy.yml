@@ -1,0 +1,120 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+env:
+  DOCKER_COMPOSE_VERSION: 2.24.0
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy files to EC2
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            # 프로젝트 디렉토리로 이동
+            cd ~/board_demo || mkdir -p ~/board_demo && cd ~/board_demo
+            
+            # Git 저장소 업데이트 또는 클론
+            if [ -d .git ]; then
+              git fetch origin
+              git reset --hard origin/main || git reset --hard origin/master
+            else
+              git clone ${{ github.server_url }}/${{ github.repository }} .
+            fi
+          EOF
+
+      - name: Setup Docker Compose on EC2
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            # Docker 설치 확인
+            if ! command -v docker &> /dev/null; then
+              echo "Docker가 설치되어 있지 않습니다. 설치를 진행합니다..."
+              sudo yum update -y
+              sudo yum install -y docker
+              sudo systemctl start docker
+              sudo systemctl enable docker
+              sudo usermod -aG docker $USER
+            fi
+            
+            # Docker Compose 설치 확인
+            if ! command -v docker-compose &> /dev/null; then
+              echo "Docker Compose가 설치되어 있지 않습니다. 설치를 진행합니다..."
+              sudo curl -L "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+          EOF
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd ~/board_demo
+            
+            # 환경 변수 파일 생성 (없는 경우)
+            if [ ! -f .env ]; then
+              cat > .env << EOL
+DB_PASSWORD=${{ secrets.DB_PASSWORD || 'root1234' }}
+NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_HOST }}:8080
+EOL
+            fi
+            
+            # 기존 컨테이너 중지 및 제거
+            docker-compose down || true
+            
+            # 이미지 빌드 및 컨테이너 시작
+            docker-compose build --no-cache
+            docker-compose up -d
+            
+            # 컨테이너 상태 확인
+            docker-compose ps
+            
+            # 로그 확인
+            echo "=== Backend Logs ==="
+            docker-compose logs --tail=50 backend || true
+            echo "=== Frontend Logs ==="
+            docker-compose logs --tail=50 frontend || true
+          EOF
+
+      - name: Health Check
+        run: |
+          echo "배포 완료. 서비스 상태를 확인합니다..."
+          sleep 10
+          
+          # 백엔드 헬스 체크
+          BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}:8080/api/board || echo "000")
+          echo "Backend Status: $BACKEND_STATUS"
+          
+          # 프론트엔드 헬스 체크
+          FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}:3000 || echo "000")
+          echo "Frontend Status: $FRONTEND_STATUS"
+          
+          if [ "$BACKEND_STATUS" != "200" ] && [ "$BACKEND_STATUS" != "000" ]; then
+            echo "⚠️ 백엔드 서비스가 정상적으로 응답하지 않습니다."
+          fi
+          
+          if [ "$FRONTEND_STATUS" != "200" ] && [ "$FRONTEND_STATUS" != "000" ]; then
+            echo "⚠️ 프론트엔드 서비스가 정상적으로 응답하지 않습니다."
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
+
