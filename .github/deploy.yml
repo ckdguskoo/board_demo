@@ -36,6 +36,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Build frontend image
+        run: |
+          docker buildx build \
+            --build-arg NEXT_PUBLIC_API_URL=http://3.37.62.82:8080 \
+            --no-cache \
+            --file ./board_frontend/Dockerfile \
+            --tag board-frontend:latest \
+            --output type=docker,dest=/tmp/frontend-image.tar \
+            ./board_frontend
+
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
@@ -97,7 +107,7 @@ jobs:
             ls -lh ${APP_DIR}/board-demo.jar
           EOF
 
-      - name: Copy configuration files and build frontend on EC2
+      - name: Copy configuration files to EC2
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             cd ~/board_demo
@@ -109,13 +119,23 @@ jobs:
             else
               git clone ${{ github.server_url }}/${{ github.repository }} .
             fi
-            
-            # 프론트엔드 이미지 빌드 (EC2에서 직접 빌드)
-            cd ~/board_demo/board_frontend
-            docker build -t board-frontend:latest \
-              --build-arg NEXT_PUBLIC_API_URL=http://3.37.62.82:8080 \
-              --no-cache \
-              .
+          EOF
+
+      - name: Transfer frontend Docker image to EC2
+        run: |
+          # 이미지 압축
+          gzip -c /tmp/frontend-image.tar > /tmp/frontend-image.tar.gz
+          
+          # EC2로 전송
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            /tmp/frontend-image.tar.gz \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/board_demo/
+          
+          # EC2에서 이미지 로드
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            cd ~/board_demo
+            gunzip -c frontend-image.tar.gz | docker load
+            rm -f frontend-image.tar.gz
           EOF
 
       - name: Deploy with Docker Compose
