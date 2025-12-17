@@ -2,6 +2,9 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# 빌드 시 백엔드 API 주소를 주입하기 위한 빌드 인자
+ARG NEXT_PUBLIC_API_URL
+
 # 패키지 파일 복사
 COPY package.json package-lock.json* ./
 
@@ -16,6 +19,8 @@ RUN mkdir -p public || true
 
 # Next.js 빌드
 ENV NEXT_TELEMETRY_DISABLED=1
+# 빌드 시 사용할 공개 API URL 주입
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN npm run build
 
 # Stage 2: 프로덕션 실행
@@ -24,6 +29,10 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# (선택) 런타임에도 동일한 값 유지
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 # 보안을 위한 non-root 사용자 생성
 RUN addgroup --system --gid 1001 nodejs && \
