@@ -9,7 +9,7 @@ on:
 
 env:
   DOCKER_COMPOSE_VERSION: 2.24.0
-  APP_DIR: /home/ec2-user/app
+  APP_DIR: ${{ secrets.EC2_PATH }}
 
 jobs:
   build-and-deploy:
@@ -148,7 +148,7 @@ jobs:
             cat > .env << EOL
 DB_PASSWORD=${{ secrets.DB_PASSWORD || 'root1234' }}
 NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_HOST }}:8080
-APP_DIR=/home/ec2-user/app
+APP_DIR=${{ secrets.EC2_PATH }}
 EOL
             
             # 기존 컨테이너 중지 및 제거
