@@ -40,8 +40,7 @@ jobs:
         run: |
           docker buildx build \
             --build-arg NEXT_PUBLIC_API_URL=http://3.37.62.82:8080 \
-            --cache-from type=gha \
-            --cache-to type=gha,mode=max \
+            --no-cache \
             --file ./board_frontend/Dockerfile \
             --tag board-frontend:latest \
             --output type=docker,dest=/tmp/frontend-image.tar \
