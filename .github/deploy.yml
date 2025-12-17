@@ -37,16 +37,15 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./board_frontend
-          file: ./board_frontend/Dockerfile
-          push: false
-          tags: board-frontend:latest
-          build-args: NEXT_PUBLIC_API_URL=http://3.37.62.82:8080
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          outputs: type=docker,dest=/tmp/frontend-image.tar
+        run: |
+          docker buildx build \
+            --build-arg NEXT_PUBLIC_API_URL=http://3.37.62.82:8080 \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --file ./board_frontend/Dockerfile \
+            --tag board-frontend:latest \
+            --output type=docker,dest=/tmp/frontend-image.tar \
+            ./board_frontend
 
       - name: Configure SSH
         run: |
