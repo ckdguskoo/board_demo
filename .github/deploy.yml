@@ -10,7 +10,6 @@ on:
 env:
   DOCKER_COMPOSE_VERSION: 2.24.0
   APP_DIR: ${{ secrets.EC2_PATH }}
-  FRONTEND_API_URL: http://${{ secrets.EC2_HOST }}:8080
 
 jobs:
   build-and-deploy:
@@ -45,7 +44,7 @@ jobs:
           push: false
           tags: board-frontend:latest
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ env.FRONTEND_API_URL }}
+            NEXT_PUBLIC_API_URL=http://3.37.62.82:8080
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=docker,dest=/tmp/frontend-image.tar
