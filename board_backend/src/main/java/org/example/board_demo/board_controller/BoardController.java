@@ -1,0 +1,39 @@
+package org.example.board_demo.board_controller;
+
+import lombok.RequiredArgsConstructor;
+import org.example.board_demo.board_domain.BoardDomain;
+import org.example.board_demo.board_dto.BoardUpdateRequestDto;
+import org.example.board_demo.board_service.BoardService;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/board")
+public class BoardController {
+    private final BoardService boardService;
+
+    @GetMapping
+    public List<BoardDomain> findAll() {
+        List<BoardDomain> all = boardService.findAll();
+        return all;
+    }
+
+    @PostMapping
+    public BoardDomain save(@RequestBody BoardDomain boardDomain) {
+        BoardDomain boardDomain1 = boardService.addBoard(boardDomain);
+        return boardDomain1;
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        boardService.deleteBoard(id);
+    }
+
+    @PutMapping("/{id}")
+    public BoardDomain modify(@PathVariable Long id, @RequestBody BoardUpdateRequestDto requestDto) {
+        return boardService.modifyBoard(id, requestDto);
+    }
+
+}
