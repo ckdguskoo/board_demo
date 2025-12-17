@@ -78,7 +78,7 @@ export default function EditPage() {
     return (
       <div className="container">
         <ErrorMessage message={fetchError || '게시글을 찾을 수 없습니다.'} />
-        <div style={{ marginTop: '20px' }}>
+        <div className="error-actions">
           <Button variant="secondary" onClick={() => router.push('/')}>
             목록으로 돌아가기
           </Button>

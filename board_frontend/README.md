@@ -148,4 +148,3 @@ board_frontend/
 ├── tsconfig.json
 └── next.config.js
 ```
-test1

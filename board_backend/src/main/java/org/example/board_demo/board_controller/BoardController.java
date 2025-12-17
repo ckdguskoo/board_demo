@@ -12,18 +12,17 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/board")
 public class BoardController {
+    
     private final BoardService boardService;
 
     @GetMapping
     public List<BoardDomain> findAll() {
-        List<BoardDomain> all = boardService.findAll();
-        return all;
+        return boardService.findAll();
     }
 
     @PostMapping
     public BoardDomain save(@RequestBody BoardDomain boardDomain) {
-        BoardDomain boardDomain1 = boardService.addBoard(boardDomain);
-        return boardDomain1;
+        return boardService.addBoard(boardDomain);
     }
 
     @DeleteMapping("/{id}")

@@ -16,8 +16,7 @@ export default function Home() {
   const { boards, loading, error, refetch } = useBoards();
   const { deleteBoard, loading: isDeleting } = useDeleteBoard();
   const [currentPage, setCurrentPage] = useState(1);
-  const [isPageTransitioning, setIsPageTransitioning] = useState(false);
-  const [pageDirection, setPageDirection] = useState<'next' | 'prev'>('next');
+  const [pageTransitionDirection, setPageTransitionDirection] = useState<'next' | 'prev' | null>(null);
 
   // 현재 페이지에 표시할 게시글 계산
   const paginatedBoards = useMemo(() => {
@@ -56,24 +55,11 @@ export default function Home() {
   };
 
   const handlePageChange = (page: number) => {
-    // 페이지 방향 결정
-    const direction = page > currentPage ? 'next' : 'prev';
-    setPageDirection(direction);
+    if (page === currentPage) return;
     
-    // 애니메이션 시작
-    setIsPageTransitioning(true);
-    
-    // 애니메이션 중간에 페이지 변경
-    setTimeout(() => {
-      setCurrentPage(page);
-      // 페이지 변경 시 스크롤을 맨 위로
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 300); // 애니메이션 중간 지점
-    
-    // 애니메이션 완료
-    setTimeout(() => {
-      setIsPageTransitioning(false);
-    }, 600); // 애니메이션 완료 시간
+    setPageTransitionDirection(page > currentPage ? 'next' : 'prev');
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -85,7 +71,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div style={{ marginBottom: '20px', textAlign: 'right' }}>
+      <div className="create-button-container">
         <Link href="/create">
           <Button>글쓰기</Button>
         </Link>
@@ -96,16 +82,12 @@ export default function Home() {
       {loading ? (
         <Loading />
       ) : (
-        <>
-          <div 
-            className={`page-content ${isPageTransitioning ? `page-flip-${pageDirection}` : ''}`}
-          >
-            <BoardList
-              boards={paginatedBoards}
-              onDelete={handleDelete}
-              isDeleting={isDeleting}
-            />
-          </div>
+        <div className={`page-transition ${pageTransitionDirection === 'next' ? 'page-transition-next' : ''} ${pageTransitionDirection === 'prev' ? 'page-transition-prev' : ''}`}>
+          <BoardList
+            boards={paginatedBoards}
+            onDelete={handleDelete}
+            isDeleting={isDeleting}
+          />
           {totalPages > 0 && (
             <Pagination
               currentPage={currentPage}
@@ -113,7 +95,7 @@ export default function Home() {
               onPageChange={handlePageChange}
             />
           )}
-        </>
+        </div>
       )}
     </div>
   );

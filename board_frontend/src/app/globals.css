@@ -357,6 +357,48 @@ a {
   gap: 10px;
 }
 
+/* 테이블 컬럼 너비 */
+.col-title {
+  width: 45%;
+}
+
+.col-author {
+  width: 15%;
+}
+
+.col-date {
+  width: 25%;
+}
+
+.col-actions {
+  width: 15%;
+}
+
+/* 게시글 제목 링크 */
+.board-title-link {
+  color: #64b5f6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.board-title-link:hover {
+  color: #42a5f5;
+  text-decoration: underline;
+}
+
+/* 액션 버튼 */
+.action-button {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* 글쓰기 버튼 컨테이너 */
+.create-button-container {
+  margin-bottom: 20px;
+  text-align: right;
+}
+
 .empty-state {
   text-align: center;
   padding: 80px 20px;
@@ -640,11 +682,33 @@ a[href^="/"]:hover {
   }
 }
 
-/* 페이지 전환 중 테이블 숨김 방지 */
-.page-content.page-flip-next .table,
-.page-content.page-flip-prev .table {
-  backface-visibility: hidden;
-  transform-style: preserve-3d;
+/* 페이지 전환 애니메이션 */
+.page-transition-enter {
+  transform: rotateY(90deg) scale(0.8);
+  opacity: 0;
+}
+
+.page-transition-enter-active {
+  transform: rotateY(0deg) scale(1);
+  opacity: 1;
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.6s ease-in;
+}
+
+.page-transition-exit {
+  transform: rotateY(0deg) scale(1);
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  transform: rotateY(-90deg) scale(0.8);
+  opacity: 0;
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.6s ease-out;
+}
+
+/* 에러 액션 버튼 영역 */
+.error-actions {
+  margin-top: 20px;
+  text-align: center;
 }
 
 /* 반응형 디자인 */

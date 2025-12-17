@@ -25,25 +25,17 @@ export default function BoardList({ boards, onDelete, isDeleting = false }: Boar
     <table className="table">
       <thead>
         <tr>
-          <th style={{ width: '45%' }}>제목</th>
-          <th style={{ width: '15%' }}>작성자</th>
-          <th style={{ width: '25%' }}>작성일</th>
-          <th style={{ width: '15%' }}>작업</th>
+          <th className="col-title">제목</th>
+          <th className="col-author">작성자</th>
+          <th className="col-date">작성일</th>
+          <th className="col-actions">작업</th>
         </tr>
       </thead>
       <tbody>
         {boards.map((board, index) => (
           <tr key={board.id} style={{ animationDelay: `${index * 0.1}s` }}>
             <td>
-              <Link
-                href={`/edit/${board.id}`}
-                style={{ 
-                  color: '#64b5f6', 
-                  textDecoration: 'none',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease'
-                }}
-              >
+              <Link href={`/edit/${board.id}`} className="board-title-link">
                 {board.title}
               </Link>
             </td>
@@ -52,10 +44,7 @@ export default function BoardList({ boards, onDelete, isDeleting = false }: Boar
             <td>
               <div className="actions">
                 <Link href={`/edit/${board.id}`}>
-                  <Button
-                    variant="secondary"
-                    style={{ padding: '6px 12px', fontSize: '12px' }}
-                  >
+                  <Button variant="secondary" className="action-button">
                     수정
                   </Button>
                 </Link>
@@ -63,7 +52,7 @@ export default function BoardList({ boards, onDelete, isDeleting = false }: Boar
                   variant="danger"
                   onClick={() => onDelete(board.id)}
                   disabled={isDeleting}
-                  style={{ padding: '6px 12px', fontSize: '12px' }}
+                  className="action-button"
                 >
                   삭제
                 </Button>
