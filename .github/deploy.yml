@@ -43,7 +43,8 @@ jobs:
           file: ./board_frontend/Dockerfile
           push: false
           tags: board-frontend:latest
-          build-args: NEXT_PUBLIC_API_URL=http://3.37.62.82:8080
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://3.37.62.82:8080
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=docker,dest=/tmp/frontend-image.tar
