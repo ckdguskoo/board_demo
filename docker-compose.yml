@@ -16,6 +16,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - board-network
 
   backend:
     image: eclipse-temurin:21-jre-alpine
