@@ -72,14 +72,4 @@ board_frontend/
 └── next.config.js
 ```
 
-## API 엔드포인트
-
-프론트엔드는 다음 백엔드 API를 사용합니다:
-
-- `GET /api/board` - 전체 게시글 조회
-- `POST /api/board` - 게시글 생성
-- `PUT /api/board/{id}` - 게시글 수정
-- `DELETE /api/board/{id}` - 게시글 삭제
-
-
 
