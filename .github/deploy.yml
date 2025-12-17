@@ -43,6 +43,8 @@ jobs:
           file: ./board_frontend/Dockerfile
           push: false
           tags: board-frontend:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_HOST }}:8080
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=docker,dest=/tmp/frontend-image.tar
