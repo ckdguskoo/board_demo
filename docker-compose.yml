@@ -2,24 +2,50 @@ version: '3.8'
 services:
   mysql:
     image: mysql:8.0
+    container_name: board-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root1234}
       MYSQL_DATABASE: liondb
+      TZ: Asia/Seoul
     ports:
       - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-root1234}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:
+    driver: local
 
   backend:
-    build: ./board_backend
+    build:
+      context: ./board_backend
+      dockerfile: Dockerfile
+    container_name: board-backend
     ports:
       - "8080:8080"
     depends_on:
       - mysql
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/liondb
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/liondb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root1234}
+    restart: unless-stopped
 
   frontend:
-    build: ./board_frontend
+    build:
+      context: ./board_frontend
+      dockerfile: Dockerfile
+    container_name: board-frontend
     ports:
       - "3000:3000"
     depends_on:
       - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    restart: unless-stopped

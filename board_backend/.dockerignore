@@ -1,0 +1,14 @@
+.gradle
+build
+.idea
+*.iml
+*.log
+.git
+.gitignore
+README.md
+HELP.md
+gradlew
+gradlew.bat
+src/test
+ec2-user@*
+
