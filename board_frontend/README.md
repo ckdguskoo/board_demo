@@ -81,7 +81,5 @@ board_frontend/
 - `PUT /api/board/{id}` - 게시글 수정
 - `DELETE /api/board/{id}` - 게시글 삭제
 
-## 주의사항
 
-백엔드 서버가 실행 중이어야 합니다. 백엔드가 다른 포트에서 실행되는 경우 `.env.local` 파일에서 `NEXT_PUBLIC_API_URL`을 수정하세요.
 
