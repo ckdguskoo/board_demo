@@ -20,10 +20,14 @@ services:
       retries: 5
 
   backend:
-    image: board-backend:latest
+    image: eclipse-temurin:21-jre-alpine
     container_name: board-backend
+    working_dir: /app
+    command: java -jar /app/board-demo.jar
     ports:
       - "8080:8080"
+    volumes:
+      - ${APP_DIR:-/home/ec2-user/app}/board-demo.jar:/app/board-demo.jar:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -31,11 +35,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/liondb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root1234}
+      TZ: Asia/Seoul
     restart: unless-stopped
-    # 로컬 개발 시 빌드 사용 (주석 해제)
-    # build:
-    #   context: ./board_backend
-    #   dockerfile: Dockerfile
+    networks:
+      - board-network
 
   frontend:
     image: board-frontend:latest
@@ -47,7 +50,9 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8080
     restart: unless-stopped
-    # 로컬 개발 시 빌드 사용 (주석 해제)
+    networks:
+      - board-network
+    # 로컬 개발 시 빌드 사용
     # build:
     #   context: ./board_frontend
     #   dockerfile: Dockerfile
@@ -55,3 +60,7 @@ services:
 volumes:
   mysql_data:
     driver: local
+
+networks:
+  board-network:
+    driver: bridge

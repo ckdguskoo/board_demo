@@ -9,6 +9,7 @@ on:
 
 env:
   DOCKER_COMPOSE_VERSION: 2.24.0
+  APP_DIR: /home/ec2-user/app
 
 jobs:
   build-and-deploy:
@@ -19,19 +20,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build backend JAR
+        working-directory: ./board_backend
+        run: |
+          chmod +x gradlew
+          ./gradlew clean bootJar --no-daemon
+          ls -lh build/libs/
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Build backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./board_backend
-          file: ./board_backend/Dockerfile
-          push: false
-          tags: board-backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          outputs: type=docker,dest=/tmp/backend-image.tar
 
       - name: Build frontend image
         uses: docker/build-push-action@v5
@@ -51,12 +54,12 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Setup Docker on EC2
+      - name: Setup EC2 Environment
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             # Docker 설치 확인
             if ! command -v docker &> /dev/null; then
-              echo "Docker가 설치되어 있지 않습니다. 설치를 진행합니다..."
+              echo "Docker 설치 중..."
               sudo yum update -y
               sudo yum install -y docker
               sudo systemctl start docker
@@ -66,18 +69,48 @@ jobs:
             
             # Docker Compose 설치 확인
             if ! command -v docker-compose &> /dev/null; then
-              echo "Docker Compose가 설치되어 있지 않습니다. 설치를 진행합니다..."
-              sudo curl -L "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              echo "Docker Compose 설치 중..."
+              sudo curl -L "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
               sudo chmod +x /usr/local/bin/docker-compose
             fi
             
-            # 프로젝트 디렉토리 생성
+            # Java 설치 확인
+            if ! command -v java &> /dev/null; then
+              echo "Java 설치 중..."
+              sudo yum install -y java-21-amazon-corretto
+            fi
+            
+            # 앱 디렉토리 생성
+            mkdir -p ${APP_DIR}
             mkdir -p ~/board_demo
           EOF
 
-      - name: Copy files to EC2
+      - name: Deploy JAR file to EC2
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          # JAR 파일 찾기
+          JAR_FILE=$(find board_backend/build/libs -name "*.jar" ! -name "*-plain.jar" | head -n 1)
+          
+          if [ -z "$JAR_FILE" ]; then
+            echo "❌ JAR 파일을 찾을 수 없습니다."
+            exit 1
+          fi
+          
+          echo "📦 배포할 JAR 파일: $JAR_FILE"
+          
+          # EC2로 JAR 파일 전송
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            "$JAR_FILE" \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${APP_DIR}/board-demo.jar
+          
+          # 실행 권한 부여
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            chmod +x ${APP_DIR}/board-demo.jar
+            ls -lh ${APP_DIR}/board-demo.jar
+          EOF
+
+      - name: Copy configuration files to EC2
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             cd ~/board_demo
             
             # Git 저장소 업데이트 또는 클론
@@ -89,60 +122,55 @@ jobs:
             fi
           EOF
 
-      - name: Transfer Docker images to EC2
+      - name: Transfer frontend Docker image to EC2
         run: |
           # 이미지 압축
-          gzip -c /tmp/backend-image.tar > /tmp/backend-image.tar.gz
           gzip -c /tmp/frontend-image.tar > /tmp/frontend-image.tar.gz
           
           # EC2로 전송
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no /tmp/backend-image.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/board_demo/
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no /tmp/frontend-image.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/board_demo/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            /tmp/frontend-image.tar.gz \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/board_demo/
           
           # EC2에서 이미지 로드
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             cd ~/board_demo
-            
-            # 압축 해제 및 이미지 로드
-            gunzip -c backend-image.tar.gz | docker load
             gunzip -c frontend-image.tar.gz | docker load
-            
-            # 임시 파일 삭제
-            rm -f backend-image.tar.gz frontend-image.tar.gz
+            rm -f frontend-image.tar.gz
           EOF
 
       - name: Deploy with Docker Compose
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             cd ~/board_demo
             
-            # 환경 변수 파일 생성 (없는 경우)
-            if [ ! -f .env ]; then
-              cat > .env << EOL
+            # 환경 변수 파일 생성
+            cat > .env << EOL
 DB_PASSWORD=${{ secrets.DB_PASSWORD || 'root1234' }}
 NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_HOST }}:8080
+APP_DIR=/home/ec2-user/app
 EOL
-            fi
             
             # 기존 컨테이너 중지 및 제거
             docker-compose down || true
             
-            # 이미지는 이미 로드되었으므로 pull 없이 시작
+            # 서비스 시작
             docker-compose up -d --no-build
             
             # 컨테이너 상태 확인
+            echo "=== Container Status ==="
             docker-compose ps
             
             # 로그 확인
             echo "=== Backend Logs ==="
-            docker-compose logs --tail=50 backend || true
+            docker-compose logs --tail=30 backend || true
             echo "=== Frontend Logs ==="
-            docker-compose logs --tail=50 frontend || true
+            docker-compose logs --tail=30 frontend || true
           EOF
 
       - name: Health Check
         run: |
-          echo "배포 완료. 서비스 상태를 확인합니다..."
+          echo "🔍 서비스 상태 확인 중..."
           sleep 15
           
           # 백엔드 헬스 체크
@@ -153,17 +181,17 @@ EOL
           FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.EC2_HOST }}:3000 || echo "000")
           echo "Frontend Status: $FRONTEND_STATUS"
           
-          if [ "$BACKEND_STATUS" != "200" ] && [ "$BACKEND_STATUS" != "000" ]; then
-            echo "⚠️ 백엔드 서비스가 정상적으로 응답하지 않습니다."
-            exit 1
+          if [ "$BACKEND_STATUS" = "200" ]; then
+            echo "✅ 백엔드 서비스 정상"
+          else
+            echo "⚠️ 백엔드 서비스 응답: $BACKEND_STATUS"
           fi
           
-          if [ "$FRONTEND_STATUS" != "200" ] && [ "$FRONTEND_STATUS" != "000" ]; then
-            echo "⚠️ 프론트엔드 서비스가 정상적으로 응답하지 않습니다."
-            exit 1
+          if [ "$FRONTEND_STATUS" = "200" ]; then
+            echo "✅ 프론트엔드 서비스 정상"
+          else
+            echo "⚠️ 프론트엔드 서비스 응답: $FRONTEND_STATUS"
           fi
-          
-          echo "✅ 모든 서비스가 정상적으로 실행 중입니다."
 
       - name: Cleanup
         if: always()

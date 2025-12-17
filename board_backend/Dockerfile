@@ -17,17 +17,14 @@ RUN ./gradlew dependencies --no-daemon || true
 # 소스 코드 복사
 COPY src ./src
 
-# 애플리케이션 빌드 (상세 로그 출력)
-RUN ./gradlew clean bootJar --no-daemon --stacktrace --info || \
-    (./gradlew clean build -x test --no-daemon --stacktrace && \
-     find build/libs -name "*.jar" -type f)
+# 애플리케이션 빌드
+RUN ./gradlew clean bootJar --no-daemon --stacktrace
 
-# Stage 2: 실행
+# Stage 2: 실행 (JAR 파일만 포함)
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # 빌드된 JAR 파일 복사
-# bootJar 태스크는 build/libs/ 디렉토리에 JAR를 생성합니다
 COPY --from=build /app/build/libs/*.jar app.jar
 
 # 포트 노출
