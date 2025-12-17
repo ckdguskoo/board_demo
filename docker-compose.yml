@@ -33,8 +33,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/liondb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root1234}
-      SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_JDBC_URL: jdbc:mysql://mysql:3306/liondb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
-      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
       TZ: Asia/Seoul
     restart: unless-stopped
     networks:
