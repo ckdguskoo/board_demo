@@ -3,7 +3,10 @@ spring:
     name: board demo
 
   datasource:
-    url: jdbc:mysql://mysql:3306/liondb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+    #ec2 환경
+    url: jdbc:mysql://mysql:3307/liondb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+    #로컬 환경
+#    url: jdbc:mysql://mysql:3307/liondb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
     username: root
     password: root1234
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -16,5 +19,3 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
-
-

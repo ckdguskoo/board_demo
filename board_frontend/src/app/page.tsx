@@ -18,11 +18,18 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageTransitionDirection, setPageTransitionDirection] = useState<'next' | 'prev' | null>(null);
 
-  // 현재 페이지에 표시할 게시글 계산
+  // 현재 페이지에 표시할 게시글 계산 (최신순 정렬)
   const paginatedBoards = useMemo(() => {
+    // 최신 글이 맨 위에 오도록 created_at 기준 내림차순 정렬
+    const sortedBoards = [...boards].sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA; // 내림차순 (최신이 먼저)
+    });
+    
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return boards.slice(startIndex, endIndex);
+    return sortedBoards.slice(startIndex, endIndex);
   }, [boards, currentPage]);
 
   // 총 페이지 수 계산

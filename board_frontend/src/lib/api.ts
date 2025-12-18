@@ -65,6 +65,18 @@ export const boardApi = {
   },
 
   /**
+   * 단일 게시글 조회
+   */
+  getById: async (id: number): Promise<Board> => {
+    try {
+      const response = await apiClient.get<Board>(`/api/board/${id}`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  /**
    * 게시글 삭제
    */
   delete: async (id: number): Promise<void> => {

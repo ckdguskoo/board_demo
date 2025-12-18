@@ -17,21 +17,15 @@ export const useBoard = (id: number | null) => {
       try {
         setLoading(true);
         setError(null);
-        const boards = await boardApi.getAll();
-        const foundBoard = boards.find((b) => b.id === id);
-        
-        if (!foundBoard) {
-          setError('게시글을 찾을 수 없습니다.');
-          setBoard(null);
-        } else {
-          setBoard(foundBoard);
-        }
+        const fetchedBoard = await boardApi.getById(id);
+        setBoard(fetchedBoard);
       } catch (err) {
         const errorMessage = err instanceof Error 
           ? err.message 
           : '게시글을 불러오는 중 오류가 발생했습니다.';
         setError(errorMessage);
         console.error('게시글 조회 오류:', err);
+        setBoard(null);
       } finally {
         setLoading(false);
       }

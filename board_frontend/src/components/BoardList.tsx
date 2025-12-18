@@ -35,7 +35,7 @@ export default function BoardList({ boards, onDelete, isDeleting = false }: Boar
         {boards.map((board, index) => (
           <tr key={board.id} style={{ animationDelay: `${index * 0.1}s` }}>
             <td>
-              <Link href={`/edit/${board.id}`} className="board-title-link">
+              <Link href={`/board/${board.id}`} className="board-title-link">
                 {board.title}
               </Link>
             </td>

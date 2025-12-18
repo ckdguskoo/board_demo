@@ -20,6 +20,11 @@ public class BoardController {
         return boardService.findAll();
     }
 
+    @GetMapping("/{id}")
+    public BoardDomain findOne(@PathVariable Long id) throws  Exception{
+        return boardService.findById(id);
+    }
+
     @PostMapping
     public BoardDomain save(@RequestBody BoardDomain boardDomain) {
         return boardService.addBoard(boardDomain);

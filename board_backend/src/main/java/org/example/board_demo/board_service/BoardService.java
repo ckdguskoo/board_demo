@@ -22,6 +22,10 @@ public class BoardService {
         return boardRepository.findAll();
     }
 
+    public BoardDomain findById(Long id) {
+        return boardRepository.findById(id).orElseThrow(NoSuchElementException::new);
+    }
+
     @Transactional
     public BoardDomain addBoard(BoardDomain boardDomain) {
         boardDomain.setCreated_at(LocalDateTime.now());
@@ -48,5 +52,7 @@ public class BoardService {
         log.info("게시글 id: {}이 수정되었습니다.", existingBoard.getId());
         return boardRepository.save(existingBoard);
     }
+
+
 
 }
