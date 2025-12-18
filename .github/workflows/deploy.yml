@@ -38,6 +38,7 @@ jobs:
 
       - name: Build frontend image
         run: |
+          # ⚠️ EC2 IP 변경 시 여기 수정 필요: 3.37.62.82를 새 IP로 변경
           docker buildx build \
             --build-arg NEXT_PUBLIC_API_URL=http://3.37.62.82:8080 \
             --no-cache \
