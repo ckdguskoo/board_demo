@@ -1,0 +1,20 @@
+# Large files
+*.tar
+board_frontend/board-frontend.tar
+
+# Build artifacts
+board_backend/build/
+board_backend/.gradle/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
