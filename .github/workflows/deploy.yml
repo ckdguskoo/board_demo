@@ -39,7 +39,7 @@ jobs:
       - name: Build frontend image
         run: |
           docker buildx build \
-            --build-arg NEXT_PUBLIC_API_URL=http://15.164.233.186:8080 \
+            --build-arg NEXT_PUBLIC_API_URL=http://3.39.195.71 \
             --no-cache \
             --file ./board_frontend/Dockerfile \
             --tag board-frontend:latest \

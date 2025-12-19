@@ -4,6 +4,7 @@
 
 set -e
 
+#IP값 수정
 EC2_HOST=${1:-"13.124.84.86"}
 SSH_KEY=${2:-"~/.ssh/ec2-key.pem"}
 EC2_USER=${3:-"ec2-user"}

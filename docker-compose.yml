@@ -51,7 +51,7 @@ services:
     environment:
       # EC2 배포 시: EC2 퍼블릭 IP로 변경 필요 (예: http://15.164.233.186:8080)
       # 로컬 개발 시: http://localhost:8080
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://3.39.195.71}
     restart: unless-stopped
     networks:
       - board-network
